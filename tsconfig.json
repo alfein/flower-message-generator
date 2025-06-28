@@ -12,6 +12,7 @@
 		}
 	],
 	"compilerOptions": {
+		"sourceMap": true,
 		"types": [
 			"./worker-configuration.d.ts"
 		]

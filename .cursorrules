@@ -1,0 +1,26 @@
+# Project Configuration
+This is a Cloudflare project using React for UI, Cloudflare workers for services and CloudFlare AI models for .
+
+## Tech Stack
+- Platform: Cloudflare
+- Framework: Vite/React SPA/
+- Language: TypeScript/
+- Styling: ShadCN
+
+## Code Generation Rules
+- Always use TypeScript with strict type checking
+- Avoid React Server Components, as this is a SPA
+- Implement proper error boundaries and loading states
+- Use ShadCN with Violet Theme
+- Follow accessibility best practices (WCAG 2.1)
+- Use ESLint and Prettier configurations
+
+## File Structure
+Follow this structure:
+
+/src - UI code
+/worker - Cloudflare worker code
+/src/components for React components
+/lib
+/types
+/utils
