@@ -1,4 +1,12 @@
 /// <reference types="vite/client" />
+/// <reference types="react" />
+/// <reference types="react-dom" />
+
+interface ImportMeta {
+  readonly hot?: {
+    accept(): void
+  }
+}
 
 declare module '*.css' {
   const content: string

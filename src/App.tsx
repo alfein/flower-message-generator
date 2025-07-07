@@ -1,10 +1,8 @@
 import { useState } from 'react'
-import { Flower, Loader2, Sparkles } from 'lucide-react'
-import { Button } from './components/ui/button'
-import { Input } from './components/ui/input'
-import { Label } from './components/ui/label'
+import { Flower, Loader2, Sparkles, Heart, MessageCircle, Copy, Check } from 'lucide-react'
 import { Checkbox } from './components/ui/checkbox'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './components/ui/card'
+
+import './App.css'
 
 interface GenerateMessageRequest {
   occasion: string
@@ -23,6 +21,7 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const [copied, setCopied] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -57,112 +56,165 @@ function App() {
     }
   }
 
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(message)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch (err) {
+      console.error('Failed to copy text: ', err)
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 to-purple-50 p-4">
-      <div className="mx-auto max-w-md">
-        <Card className="shadow-lg">
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-violet-100">
-              <Flower className="h-8 w-8 text-violet-600" />
+    <div className="app-container">
+      {/* Floating decorative elements */}
+      <div className="floating-elements">
+        <div className="floating-element"></div>
+        <div className="floating-element"></div>
+        <div className="floating-element"></div>
+      </div>
+
+      <div className="content-wrapper">
+        {/* Header Section */}
+        <div className="header-section">
+          <div className="logo-container">
+            <Flower className="logo-icon" />
+          </div>
+          <h1 className="main-title">Flower Message Generator</h1>
+          <p className="subtitle">
+            Create heartfelt, personalized messages for your beautiful flower arrangements
+          </p>
+        </div>
+
+        {/* Main Form Card */}
+        <div className="main-card">
+          <div className="card-header">
+            <div className="card-header-icon">
+              <MessageCircle className="button-icon" />
+              <h2 className="card-title">Message Details</h2>
             </div>
-            <CardTitle className="text-2xl font-bold text-gray-900">
-              Flower Message Generator
-            </CardTitle>
-            <CardDescription className="text-gray-600">
-              Create personalized messages for your flower arrangements
-            </CardDescription>
-          </CardHeader>
+            <p className="card-description">
+              Tell us about the occasion and we'll craft the perfect message
+            </p>
+          </div>
           
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="occasion" className="text-sm font-medium text-gray-700">
+          <div className="card-content">
+            <form onSubmit={handleSubmit} className="form-container">
+              <div className="form-group">
+                <label htmlFor="occasion" className="form-label">
+                  <Heart className="form-label-icon" />
                   Occasion *
-                </Label>
-                <Input
+                </label>
+                <input
                   id="occasion"
                   type="text"
                   value={occasion}
                   onChange={(e) => setOccasion(e.target.value)}
-                  placeholder="e.g. Birthday, Anniversary, Sympathy"
+                  placeholder="e.g. Birthday, Anniversary, Sympathy, Congratulations"
                   required
-                  className="w-full"
+                  className="form-input"
                 />
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="recipient" className="text-sm font-medium text-gray-700">
-                  Recipient <span className="text-gray-500">(optional)</span>
-                </Label>
-                <Input
+              <div className="form-group">
+                <label htmlFor="recipient" className="form-label">
+                  Recipient *
+                </label>
+                <input
                   id="recipient"
                   type="text"
                   value={recipient}
                   onChange={(e) => setRecipient(e.target.value)}
-                  placeholder="e.g. Mom, Friend, Colleague"
-                  className="w-full"
+                  placeholder="e.g. Mom, Friend, Colleague, Loved One"
+                  required
+                  className="form-input"
                 />
               </div>
               
-              <div className="flex items-center space-x-2">
+              <div className="checkbox-container">
                 <Checkbox
                   id="rhyme"
                   checked={rhyme}
                   onCheckedChange={(checked) => setRhyme(checked as boolean)}
                 />
-                <Label htmlFor="rhyme" className="text-sm font-medium text-gray-700">
-                  Make the message a rhyme
-                </Label>
+                <label htmlFor="rhyme" className="checkbox-label">
+                  Make the message rhyme for extra charm ✨
+                </label>
               </div>
               
-              <Button
+              <button
                 type="submit"
-                disabled={loading || !occasion}
-                className="w-full bg-violet-600 hover:bg-violet-700 disabled:bg-violet-300"
+                disabled={loading || !occasion || !recipient}
+                className="submit-button"
               >
                 {loading ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating...
+                    <Loader2 className="button-icon spinner" />
+                    Crafting your message...
                   </>
                 ) : (
                   <>
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Generate Message
+                    <Sparkles className="button-icon" />
+                    Generate Beautiful Message
                   </>
                 )}
-              </Button>
+              </button>
             </form>
             
+            {/* Generated Message Section */}
             {message && (
-              <div className="mt-6 rounded-lg bg-violet-50 p-4">
-                <h3 className="mb-2 text-lg font-semibold text-violet-900">
-                  Suggested Message:
-                </h3>
-                <div className="rounded-md bg-white p-3 text-gray-800 shadow-sm">
-                  <pre className="whitespace-pre-wrap break-words font-sans text-sm leading-relaxed">
-                    {message}
-                  </pre>
+              <div className="message-section">
+                <div className="message-header">
+                  <h3 className="message-title">
+                    <MessageCircle className="button-icon" />
+                    Your Personalized Message
+                  </h3>
+                  <button
+                    onClick={copyToClipboard}
+                    className="copy-button"
+                  >
+                    {copied ? (
+                      <>
+                        <Check style={{ width: '1rem', height: '1rem' }} />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Copy style={{ width: '1rem', height: '1rem' }} />
+                        Copy
+                      </>
+                    )}
+                  </button>
+                </div>
+                <div className="message-container">
+                  <div className="message-content">
+                    <p className="message-text">
+                      {message}
+                    </p>
+                  </div>
                 </div>
               </div>
             )}
             
+            {/* Error Section */}
             {error && (
-              <div className="mt-6 rounded-lg bg-red-50 p-4">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-red-800">{error}</p>
-                  </div>
+              <div className="error-section">
+                <div className="error-content">
+                  <svg className="error-icon" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                  <p className="error-text">{error}</p>
                 </div>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="footer">
+          <p>Made with ❤️ for Artsy Flora</p>
+        </div>
       </div>
     </div>
   )
