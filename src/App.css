@@ -13,6 +13,11 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* iPhone safe area support */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 
 /* Main container */
@@ -22,6 +27,8 @@ body {
   padding: 1rem;
   position: relative;
   overflow: hidden;
+  /* iPhone specific */
+  min-height: -webkit-fill-available;
 }
 
 /* Floating decorative elements */
@@ -211,6 +218,10 @@ body {
   font-size: 0.875rem;
   transition: all 0.2s ease;
   background: white;
+  /* iPhone specific input styling */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
 }
 
 .form-input:focus {
@@ -259,6 +270,11 @@ body {
   justify-content: center;
   gap: 0.5rem;
   box-shadow: 0 4px 14px rgba(139, 92, 246, 0.3);
+  /* iPhone specific button styling */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .submit-button:hover:not(:disabled) {
@@ -328,6 +344,11 @@ body {
   display: flex;
   align-items: center;
   gap: 0.25rem;
+  /* iPhone specific button styling */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .copy-button:hover {
@@ -402,6 +423,16 @@ body {
   margin-top: 2rem;
   font-size: 0.875rem;
   color: #6b7280;
+}
+
+/* iPhone specific styles */
+@supports (padding: max(0px)) {
+  .app-container {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+    padding-top: max(1rem, env(safe-area-inset-top));
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
 }
 
 /* Responsive design */
