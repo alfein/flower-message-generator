@@ -4,7 +4,7 @@ const SYSTEM_MESSAGE = `You are a helpful assistant that writes messages for a f
                 You are to write a message that is heartfelt and appropriate for the occasion. 
                 The message should be at least 200 characters long. The message should be in the same language as the occasion.
                 Return only one option.
-                Only return the message, no other text, no special characters, no emojis`
+                Only return the message, no other text, no special characters, no emojis, no chat prefixes, no markdown formatting.`
 
 type RequestPayload = {
   occasion: string;
@@ -19,6 +19,13 @@ type Message = {
 
 type MessagesArray = Message[];
 type Chat = { messages: MessagesArray };
+
+const models : Array<keyof AiModels>  = [
+  '@cf/meta/llama-3-8b-instruct',
+  '@cf/meta/llama-2-7b-chat-fp16',
+  '@cf/meta/llama-3.2-3b-instruct',
+  '@cf/google/gemma-3-12b-it'
+]
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -45,7 +52,9 @@ export default {
         stream: true
       } as Chat;
 
-      const stream = await env.AI.run('@cf/meta/llama-3-8b-instruct', chat,{returnRawResponse: true});
+      const modelName = models[Math.floor(Math.random() * models.length)];
+      console.debug(`Using model: ${modelName}`);
+      const stream = await env.AI.run(modelName, chat,{returnRawResponse: true});
       return stream;
     }
     return new Response(null, { status: 404 });

@@ -20,71 +20,111 @@ function App() {
   const [copied, setCopied] = useState(false)
   const [isStreaming, setIsStreaming] = useState(false)
 
+  const resetFormState = () => {
+    setMessage('')
+    setError('')
+    setCopied(false)
+  }
+
+  const createRequestBody = (): GenerateMessageRequest => ({
+    occasion,
+    recipient: recipient || undefined,
+    rhyme,
+  })
+
+  const DONE = '[DONE]'
+
+
+  const parseStreamChunk = (chunk: string): string => {
+    const parts = chunk.split('\n\n')
+    let accumulatedData = ''
+
+    for (let part of parts) {
+      if (part.startsWith('data:')) {
+        part = part.replace('data: ', '')
+
+        if (part === DONE) {
+          break;
+        }
+
+        try {
+          const data = JSON.parse(part)
+          accumulatedData += data.response
+        } catch (err) {
+          console.warn('Failed to parse JSON: ', err)
+          throw new Error('Faled to parse response data')
+        }
+      }
+    }
+
+    return accumulatedData
+  }
+
+  const handleStreamResponse = async (reader: ReadableStreamDefaultReader<Uint8Array>) => {
+    const decoder = new TextDecoder()
+    let accumulatedMessage = ''
+
+    try {
+      let retryChunk = ''
+      while (true) {
+        const { done, value } = await reader.read()
+
+        if (done) {
+          break
+        }
+
+        const chunk = decoder.decode(value, { stream: true })
+        let newData = ''
+        try {
+          newData = parseStreamChunk(`${retryChunk}${chunk}`)
+          retryChunk = ''
+        } catch (err) {
+          console.warn('Error parsing chunk, retrying: ', err)
+          retryChunk += chunk
+          continue
+        }
+
+        if (newData) {
+          accumulatedMessage += newData
+          setMessage(accumulatedMessage)
+        }
+      }
+    } catch (err) {
+      console.error('Error reading stream: ', err)
+      throw new Error('Failed to read response stream')
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    setMessage('')
-    setError('')
+    resetFormState()
 
     try {
-      const requestBody: GenerateMessageRequest = {
-        occasion,
-        recipient: recipient || undefined,
-        rhyme,
-      }
-
-      const res = await fetch('/api/generate-message', {
+      const requestBody = createRequestBody()
+      const response = await fetch('/api/generate-message', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody),
       })
 
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`)
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
       }
 
-      // Handle streaming response
-      const reader = res.body?.getReader()
+      const reader = response.body?.getReader()
       if (!reader) {
-        throw new Error('No response body')
+        throw new Error('No response body available')
       }
 
       setIsStreaming(true)
-      const decoder = new TextDecoder()
-      let accumulatedMessage = ''
-
-      while (true) {
-        const { done, value } = await reader.read()
-
-        if (done) {
-          break;
-        }
-
-        const chunk = decoder.decode(value, { stream: true })
-        const parts = chunk.split('\n\n')
-
-        for (let part of parts) {
-
-          if (part.startsWith('data:')) {
-            part = part.replace('data: ', '');
-            try {
-              const data = JSON.parse(part);
-              accumulatedMessage += data.response
-              setMessage(accumulatedMessage)
-            } catch (err) {
-              console.error('Failed to parse JSON: ', err)
-              break;
-            }
-          }
-        }
-      }
-
-      setIsStreaming(false)
+      await handleStreamResponse(reader)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred'
       setError(`Error: ${errorMessage}`)
     } finally {
       setLoading(false)
+      setIsStreaming(false)
     }
   }
 
