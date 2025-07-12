@@ -10,10 +10,6 @@ interface GenerateMessageRequest {
   rhyme: boolean
 }
 
-interface GenerateMessageResponse {
-  message: string
-}
-
 function App() {
   const [occasion, setOccasion] = useState('')
   const [recipient, setRecipient] = useState('')
@@ -22,32 +18,68 @@ function App() {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
+  const [isStreaming, setIsStreaming] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setMessage('')
     setError('')
-    
+
     try {
       const requestBody: GenerateMessageRequest = {
         occasion,
         recipient: recipient || undefined,
         rhyme,
       }
-      
+
       const res = await fetch('/api/generate-message', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody),
       })
-      
+
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`)
       }
-      
-      const data: GenerateMessageResponse = await res.json()
-      setMessage(data.message)
+
+      // Handle streaming response
+      const reader = res.body?.getReader()
+      if (!reader) {
+        throw new Error('No response body')
+      }
+
+      setIsStreaming(true)
+      const decoder = new TextDecoder()
+      let accumulatedMessage = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+
+        if (done) {
+          break;
+        }
+
+        const chunk = decoder.decode(value, { stream: true })
+        const parts = chunk.split('\n\n')
+
+        for (let part of parts) {
+
+          if (part.startsWith('data:')) {
+            part = part.replace('data: ', '');
+            try {
+              const data = JSON.parse(part);
+              accumulatedMessage += data.response
+              setMessage(accumulatedMessage)
+            } catch (err) {
+              console.error('Failed to parse JSON: ', err)
+              break;
+            }
+          }
+        }
+      }
+
+      setIsStreaming(false)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred'
       setError(`Error: ${errorMessage}`)
@@ -98,7 +130,7 @@ function App() {
               Tell us about the occasion and we'll craft the perfect message
             </p>
           </div>
-          
+
           <div className="card-content">
             <form onSubmit={handleSubmit} className="form-container">
               <div className="form-group">
@@ -116,7 +148,7 @@ function App() {
                   className="form-input"
                 />
               </div>
-              
+
               <div className="form-group">
                 <label htmlFor="recipient" className="form-label">
                   Recipient *
@@ -131,7 +163,7 @@ function App() {
                   className="form-input"
                 />
               </div>
-              
+
               <div className="checkbox-container">
                 <Checkbox
                   id="rhyme"
@@ -142,7 +174,7 @@ function App() {
                   Make the message rhyme for extra charm ✨
                 </label>
               </div>
-              
+
               <button
                 type="submit"
                 disabled={loading || !occasion || !recipient}
@@ -161,42 +193,51 @@ function App() {
                 )}
               </button>
             </form>
-            
+
             {/* Generated Message Section */}
-            {message && (
+            {(message || isStreaming) && (
               <div className="message-section">
                 <div className="message-header">
                   <h3 className="message-title">
                     <MessageCircle className="button-icon" />
                     Your Personalized Message
                   </h3>
-                  <button
-                    onClick={copyToClipboard}
-                    className="copy-button"
-                  >
-                    {copied ? (
-                      <>
-                        <Check style={{ width: '1rem', height: '1rem' }} />
-                        Copied!
-                      </>
-                    ) : (
-                      <>
-                        <Copy style={{ width: '1rem', height: '1rem' }} />
-                        Copy
-                      </>
-                    )}
-                  </button>
+                  {!isStreaming && (
+                    <button
+                      onClick={copyToClipboard}
+                      className="copy-button"
+                    >
+                      {copied ? (
+                        <>
+                          <Check style={{ width: '1rem', height: '1rem' }} />
+                          Copied!
+                        </>
+                      ) : (
+                        <>
+                          <Copy style={{ width: '1rem', height: '1rem' }} />
+                          Copy
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
                 <div className="message-container">
                   <div className="message-content">
                     <p className="message-text">
                       {message}
+                      {isStreaming && (
+                        <span className="typing-indicator">
+                          <span className="typing-dot"></span>
+                          <span className="typing-dot"></span>
+                          <span className="typing-dot"></span>
+                        </span>
+                      )}
                     </p>
                   </div>
                 </div>
               </div>
             )}
-            
+
             {/* Error Section */}
             {error && (
               <div className="error-section">

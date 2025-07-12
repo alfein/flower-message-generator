@@ -41,11 +41,12 @@ export default {
         messages: [
           { role: 'system', content: SYSTEM_MESSAGE },
           { role: 'user', content: prompt }
-        ]
+        ],
+        stream: true
       } as Chat;
 
-      const aiResponse = await env.AI.run('@cf/meta/llama-3-8b-instruct', chat);
-      return Response.json({ message: aiResponse.response?.replace("\"", "") });
+      const stream = await env.AI.run('@cf/meta/llama-3-8b-instruct', chat,{returnRawResponse: true});
+      return stream;
     }
     return new Response(null, { status: 404 });
   },
